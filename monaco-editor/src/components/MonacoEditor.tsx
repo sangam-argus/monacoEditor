@@ -3,13 +3,13 @@ import { useRef, useEffect, useState, useId } from 'react';
 import { loadVirtualFilesAndCreateModels } from './monacoEditorSetup';
 
 interface MonacoEditorProps {
-  filePath: string;           // file path for model
-  originalValue?: string;     // content from DB
-  modifiedValue?: string;     // content user edits
+  filePath: string;           
+  originalValue?: string;     
+  modifiedValue?: string;     
   language?: string;
   theme?: string;
   readOnly?: boolean;
-  onDiffChange?: (diff: any) => void; // optional callback to send diff to backend
+  onDiffChange?: (diff: any) => void; 
 }
 
 const MonacoEditor: React.FC<MonacoEditorProps> = ({
@@ -19,13 +19,13 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
   language = 'typescript',
   theme = 'vs-dark',
   readOnly = false,
-  onDiffChange
+//   onDiffChange
 }) => {
   const id = useRef(useId());
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor | null>(null);
   const [originalModel, setOriginalModel] = useState<monaco.editor.ITextModel | null>(null);
   const [modifiedModel, setModifiedModel] = useState<monaco.editor.ITextModel | null>(null);
-  const debounceTimer = useRef<number| null>(null);
+//   const debounceTimer = useRef<number| null>(null);
 
   useEffect(() => {
     loadVirtualFilesAndCreateModels().then(() => {
@@ -57,43 +57,28 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
     if (originalModel && modifiedModel) {
       const container = document.getElementById(id.current);
       if (container) {
-        container.style.height="60vh"
-        container.style.width="50vw"
+        container.style.height="100vh"
+        container.style.width="100vw"
 
         editorRef.current = monaco.editor.createDiffEditor(container, {
+          enableSplitViewResizing:true,
           renderSideBySide: true,
           theme,
           readOnly,
           automaticLayout: true,
-          fontSize: 14
+          fontSize: 14,
+          originalEditable:true,
+          renderIndicators:true,
+          useInlineViewWhenSpaceIsLimited:true
         });
+        
 
         editorRef.current.setModel({
           original: originalModel,
           modified: modifiedModel
         });
-
-        // Detect changes in modified model and compute diff
-        modifiedModel.onDidChangeContent(() => {
-          if (debounceTimer.current) clearTimeout(debounceTimer.current);
-          debounceTimer.current = setTimeout(() => {
-            // const diff = monaco.editor.computeDiff(originalModel, modifiedModel, { ignoreTrimWhitespace: false });
-            const lineChange=editorRef.current?.getLineChanges()||[];
-            // Prepare structured diff
-            
-            const diffPayload = lineChange.map(c => ({
-              originalStartLineNumber: c.originalStartLineNumber,
-              originalEndLineNumber: c.originalEndLineNumber,
-              modifiedStartLineNumber: c.modifiedStartLineNumber,
-              modifiedEndLineNumber: c.modifiedEndLineNumber,
-              charChanges:c.charChanges
-              
-            }));
-            console.log(diffPayload)
-            // Optional callback to send diff to backend
-            onDiffChange?.(diffPayload);
-          }, 800);
-        });
+        const linechanges=editorRef.current?.getLineChanges();
+            console.log("Line level diff",linechanges)
       }
     }
   }, [originalModel, modifiedModel]);
