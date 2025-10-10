@@ -1,7 +1,7 @@
-import * as monaco from 'monaco-editor';
-import { useRef, useEffect } from 'react';
-import { diff_match_patch } from 'diff-match-patch';
-import './monacoEditorSetup'; // Import the Monaco setup
+import * as monaco from "monaco-editor";
+import { useRef, useEffect } from "react";
+import { diff_match_patch } from "diff-match-patch";
+import "./monacoEditorSetup";
 
 interface MonacoEditorProps {
   filePath: string;
@@ -15,66 +15,92 @@ interface MonacoEditorProps {
 const MonacoEditor: React.FC<MonacoEditorProps> = ({
   filePath,
   value,
-  language = 'typescript',
-  theme = 'vs-dark',
+  language = "typescript",
+  theme = "vs-dark",
   readOnly = false,
   onChange,
 }) => {
   const id = useRef<string>(`monaco-editor-${Math.random()}`);
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const modelRef = useRef<monaco.editor.ITextModel | null>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneDiffEditor | null>(null);
+  const originalModelRef = useRef<monaco.editor.ITextModel | null>(null);
+  const modifiedModelRef = useRef<monaco.editor.ITextModel | null>(null);
   const previousValueRef = useRef<string>(value);
 
   useEffect(() => {
     const container = document.getElementById(id.current);
     if (!container) return;
+    container.style.height = "70vh";
+    container.style.width = "100%";
 
-    container.style.height = '70vh';
-    container.style.width = '100%';
+    const originalModel = monaco.editor.createModel(value, language);
+    originalModelRef.current = originalModel;
+    const modifiedModel = monaco.editor.createModel(value, language);
+    modifiedModelRef.current = modifiedModel;
 
-    const uri = monaco.Uri.parse(`file:///${filePath}`);
-    let currentModel = monaco.editor.getModel(uri);
-
-    if (!currentModel) {
-      currentModel = monaco.editor.createModel(value, language, uri);
-    }
-
-    modelRef.current = currentModel;
-    editorRef.current = monaco.editor.create(container, {
-      model: currentModel,
+    editorRef.current = monaco.editor.createDiffEditor(container, {
       theme,
       readOnly,
       automaticLayout: true,
       fontSize: 14,
+      renderSideBySide: false, // Inline mode
+      enableSplitViewResizing: false,
+      renderOverviewRuler: false, // Hide diff decorations initially
     });
 
+    editorRef.current.setModel({
+      original: originalModel,
+      modified: modifiedModel,
+    });
+
+    // Hide the original editor
+    const originalEditor = editorRef.current.getOriginalEditor();
+    originalEditor.updateOptions({
+      readOnly: true,
+      glyphMargin: false,
+      lineNumbers: 'off',
+    });
+
+    const modifiedEditor = editorRef.current.getModifiedEditor();
+
+    const handleChange = () => {
+      editorRef.current?.updateOptions({
+        renderOverviewRuler: true, 
+      });
+    };
+
+    // Generate patches on blur
     const handleBlur = () => {
-      const currentVal = editorRef.current!.getValue();
+      const currentVal = modifiedModelRef.current!.getValue();
+      console.log(currentVal)
       if (currentVal !== previousValueRef.current) {
         const dmp = new diff_match_patch();
         const diffs = dmp.diff_main(previousValueRef.current, currentVal);
         dmp.diff_cleanupSemantic(diffs);
         const patches = dmp.patch_make(previousValueRef.current, diffs);
         const patchText = dmp.patch_toText(patches);
-        console.log('Generated Patches:', patchText);
+        console.log("Generated Patches:", patchText);
         previousValueRef.current = currentVal;
         onChange?.(currentVal, patchText);
       }
     };
 
-    const disposable = editorRef.current.onDidBlurEditorText(handleBlur);
+    const changeDisposable = modifiedModelRef.current.onDidChangeContent(handleChange);
+
+    const blurDisposable = modifiedEditor.onDidBlurEditorText(handleBlur);
 
     return () => {
-      disposable.dispose();
+      changeDisposable.dispose();
+      blurDisposable.dispose();
       if (editorRef.current) {
         editorRef.current.dispose();
       }
     };
-  }, [filePath, language, theme, readOnly]);
+  }, [filePath, language, theme, readOnly,value]);
 
   useEffect(() => {
-    if (modelRef.current && value !== modelRef.current.getValue()) {
-      modelRef.current.setValue(value);
+    if (modifiedModelRef.current && value !== modifiedModelRef.current.getValue()) {
+      modifiedModelRef.current.setValue(value);
+      originalModelRef.current?.setValue(value);
     }
     previousValueRef.current = value;
   }, [value]);
