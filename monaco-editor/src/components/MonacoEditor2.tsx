@@ -1,7 +1,7 @@
 import * as monaco from 'monaco-editor';
 import { useRef, useEffect } from 'react';
 import { loadVirtualFilesAndCreateModels } from './monacoEditorSetup';
-import diff_match_patch from "diff-match-patch";
+import{ diff_match_patch} from "diff-match-patch";
 
 interface MonacoEditor2Props {
   filePath: string;
@@ -36,7 +36,6 @@ const MonacoEditor2: React.FC<MonacoEditor2Props> = ({
   const modelRef = useRef<monaco.editor.ITextModel | null>(null);
   const previousValueRef = useRef<string>(value);
 
-  // Sync previousValueRef with external value updates
   useEffect(() => {
     previousValueRef.current = value;
     if (modelRef.current && value !== modelRef.current.getValue()) {
@@ -89,9 +88,8 @@ const MonacoEditor2: React.FC<MonacoEditor2Props> = ({
     return () => {
       isMounted = false;
     };
-  }, [filePath, theme, readOnly, language]); // dependencies only related to setup
-
-  // Generate diff function remains unchanged
+  }, [filePath, theme, readOnly, language]); 
+  
   const generateDiff = (oldVal: string | undefined, newVal: string): DiffChange[] | null => {
     if (oldVal === undefined) return null;
 
