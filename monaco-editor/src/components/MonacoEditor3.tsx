@@ -44,7 +44,12 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
       fontSize: 14,
       renderSideBySide: false, // Inline mode
       enableSplitViewResizing: false,
-      renderOverviewRuler: false, // Hide diff decorations initially
+      renderOverviewRuler: true, // Hide diff decorations initially
+      ignoreTrimWhitespace: true,
+      renderMarginRevertIcon: false,
+      find: {
+        autoFindInSelection: "always",
+      },
     });
 
     editorRef.current.setModel({
@@ -57,21 +62,21 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
     originalEditor.updateOptions({
       readOnly: true,
       glyphMargin: false,
-      lineNumbers: 'off',
+      lineNumbers: "off",
     });
 
     const modifiedEditor = editorRef.current.getModifiedEditor();
 
     const handleChange = () => {
       editorRef.current?.updateOptions({
-        renderOverviewRuler: true, 
+        renderOverviewRuler: true,
       });
     };
 
     // Generate patches on blur
     const handleBlur = () => {
       const currentVal = modifiedModelRef.current!.getValue();
-      console.log(currentVal)
+      console.log(currentVal);
       if (currentVal !== previousValueRef.current) {
         const dmp = new diff_match_patch();
         const diffs = dmp.diff_main(previousValueRef.current, currentVal);
@@ -84,7 +89,8 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
       }
     };
 
-    const changeDisposable = modifiedModelRef.current.onDidChangeContent(handleChange);
+    const changeDisposable =
+      modifiedModelRef.current.onDidChangeContent(handleChange);
 
     const blurDisposable = modifiedEditor.onDidBlurEditorText(handleBlur);
 
@@ -95,10 +101,13 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
         editorRef.current.dispose();
       }
     };
-  }, [filePath, language, theme, readOnly,value]);
+  }, [filePath, language, theme, readOnly, value]);
 
   useEffect(() => {
-    if (modifiedModelRef.current && value !== modifiedModelRef.current.getValue()) {
+    if (
+      modifiedModelRef.current &&
+      value !== modifiedModelRef.current.getValue()
+    ) {
       modifiedModelRef.current.setValue(value);
       originalModelRef.current?.setValue(value);
     }

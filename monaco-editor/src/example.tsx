@@ -1,29 +1,17 @@
-// // example.tsx
 
-// import React from 'react';
+// // import React from 'react';
 
-// interface GreetingProps {
-//   name: string;
-// }
+// // interface GreetingProps {
+// //   name: string; 
+// // }
+// ksbya
+// gas
 
-// const Greeting: React.FC<GreetingProps> = ({ name }) => {
-//   return <h1>Hello, {name}!</h1>;
-// };
+// // const Greeting: React.FC<GreetingProps> = ({ name }) =// };
 
-// const Example: React.FC = () => {
-//   const [count, setCount] = React.useState(0);
+// // const Example: React.FC t, setCount] = React.useState(0);
 
-//   const handleClick = () => {
-//     setCount(prev => prev + 1);
-//   };
-
-//   return (
-//     <div>
-//       <Greeting name="World" />
-//       <p>You clicked {count} times</p>
-//       <button onClick={handleClick}>Click me</button>
-//     </div>
-//   );
-// };
-
-// export default Example;
+// //   const hand
+// //     setCount(prev => prev + 
+// set CountQueuingStrategy
+// sd
